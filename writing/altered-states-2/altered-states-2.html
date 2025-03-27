@@ -1,0 +1,90 @@
+---
+layout: default
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Puzzle Solving</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="dcterms.date" content="2024-06-10" />
+  </head>
+
+  <body>
+    <h1>Using Genetic Algorithms:</h1>
+    <h2>My Solution to Jane Street's <a href="https://www.janestreet.com/puzzles/altered-states-2-index/" title="archive">June 2024</a> Puzzle</h2>
+<p>We need to find an optimal 5x5 arrangement of letters to maximize our score. Since we don’t have any training data and can’t easily generate any, we’ll have to be smarter than just throwing data at a neural net until it spits out the right answer. Instead, we’ll have to use an iterative optimization technique to generate, test, and improve our arrangement of letters. This sounds like the perfect job for a <strong>genetic algorithm</strong>.</p>
+<p>The genetic algorithm is inspired by natural selection in the biological world, in which each generation of solutions is iteratively improved via recombination and mutation until an acceptable solution is found. In other words, first we randomly generate solutions. Then, we take pairs of those solutions, split each one in half, and recombine each of the different halves so we have two new child candidates. Next, in the mutation step we inject noise into the process by regenerating one or more of the letters in a candidate solution so as to broaden the set of paths that we search. Now it’s time to score each new solution using the evaluation function that we want to maximaize. Finally, using the parent and child population of solutions, we select the top 50% of candidates, thus keeping the same number of potential solutions. Each iteration we will have a top-scoring candidate, and once we breach our threshold of 165 million, we’re done!</p>
+<h2 id="implementation">Implementation</h2>
+<p>We represent each candidate as a string of length 25, initally randomly generated based on the distribution of letters across all 50 states. This makes our recombination function basically trivial to implement:</p>
+<pre><code>def crossover(cand1, cand2):
+    split = random.randrange(23)
+    cand1_ = cand1[:split+1] + cand2[split+1:]
+    cand2_ = cand2[:split+1] + cand1[split+1:]
+    return cand1_, cand2_</code></pre>
+<p>We simply split the two candidate strings into two pieces at some random point such that <code>XXXXX...XX</code> and <code>YYYYY...YY</code> would be split, for instance, into <code>XXYYY...YY</code> and <code>YYXXX...XX</code> when our index <code>split=1</code> (since our index starts at 0). Our mutation function, shown in full below, is a little more involved:</p>
+<pre><code>def mutate(cand, cond_cnts):
+    idx = random.choice(range(25))
+    i, j = divmod(idx, 5)
+    cnts = {}
+    for di, dj in [(-1,1), (0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1), (-1,0)]:
+        i_ = i + di
+        j_ = j + dj
+        if i_ &gt;= 0 and i_ &lt; 5 and j_ &gt;= 0 and j_ &lt; 5:
+            idx_ = 5*i_ + j_
+            neighb = cand[idx_]
+            for ltr, cnt in cond_cnts[neighb].items():
+                if ltr not in cnts:
+                    cnts[ltr] = cnt
+                else:
+                    cnts[ltr] += cnt
+    letters = np.fromiter(cnts.keys(), dtype=object)
+    probs = np.fromiter(cnts.values(), dtype=float) / sum(cnts.values())
+    mut = &quot;&quot;.join(np.random.choice(letters, 1, p=probs))
+    return cand[:idx] + mut + cand[idx+1:]</code></pre>
+<p>First, we generate a random index integer, and figure out what its neighboring indices would be if the letters were arranged in a 5x5 grid. Our for loop in the middle of the funtion is going through and getting all the neighbors we find of our chosen random index. For example, if we generated <code>idx=4</code>, we’d be in the top right corner of the grid, and only have three neighbors, <code>{3,8,9}</code>. We naively form a distribution of letters from which to sample by adding the conditional counts of letters that appear next to <code>l</code> for each neighboring letter <code>l</code>. Then we replace the sampled letter into our index spot and return the new candidate string.</p>
+<p>The most important function will be our evaluation or fitness function, without which we cannot decide if we’ve solved the problem or rate our candidate solutions. The main engine of our evaluation function is <code>find_states_bysq(board, i, j, s, poss, perf, ansr_ij, ij_path, sqs_used)</code>, which allows us to recursively search for states, exploring all possible paths from a given <code>i</code> and <code>j</code> in a candidate solution <code>board</code>. (Note that we represent a solution as a list of 5 strings of length 5 in this function.) The parameter <code>s</code> is the string showing the path that we have searched so far (so perhaps we’ve traveled 3 squares already and landed on the second letter in the second row and have the letters <code>A</code>, <code>L</code>, <code>A</code>, meaning <code>s=ala</code>, <code>i=1</code>, and <code>j=1</code>. ) We have two length 50 boolean variables, <code>poss</code> and <code>perf</code>, that keep track of which states are still possible given the path travelled thus far (remember we get up to one erroneous letter when constructing the state, hence the need for <code>perf</code>). Since all python variables are pointers and we want to update our two lists of booleans, we must copy them, e.g. <code>poss_ = poss[:]</code>, in order to prevent false negatives when we backtrack to a new path. Here’s the recursive part of the function:</p>
+<pre><code>    if any(poss_):
+        for di, dj in [(-1,1), (0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1), (-1,0)]:
+            i_ = i + di
+            j_ = j + dj
+            if i_ &gt;= 0 and i_ &lt; 5 and j_ &gt;= 0 and j_ &lt; 5:
+                find_states_bysq(board, i_, j_, s+board[i][j], poss_, perf_, ansr_ij, ij_path+str(i_)+str(j_)+&quot; &quot;, sqs_used)</code></pre>
+<p>Perhaps the most important parameter is <code>ansr_ij</code>. This keeps track of all states that have actually been successfully found in our sweep through a candidate solution. We keep this function parameter as a pointer to the list of states found, and append the state to the list upon completion of the path. The other two parameters were used for analysis, to check function accuracy and determine whether there were unused squares on a given board for post-scoring analysis. Here’s the function in its entirety.</p>
+<pre><code>def find_states_bysq(board, i, j, s, poss, perf, ansr_ij, ij_path, sqs_used):
+    poss_ = poss[:]
+    perf_ = perf[:]
+    for k in range(50):
+        if poss[k]:
+            stt = STATES.at[k,&quot;state&quot;]
+            if board[i][j] != stt[len(s)]:
+                if perf[k]:
+                    perf_[k] = False
+                else:
+                    poss_[k] = False
+            if poss_[k]:
+                if len(s) + 1 == len(stt):
+                    ansr_ij.append(stt)
+                    poss_[k] = False
+                    for ij in ij_path.split():
+                        if ij in sqs_used:
+                            sqs_used[ij].add(stt)
+                        else:
+                            sqs_used[ij] = {stt}
+    if any(poss_):
+        for di, dj in [(-1,1), (0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1), (-1,0)]:
+            i_ = i + di
+            j_ = j + dj
+            if i_ &gt;= 0 and i_ &lt; 5 and j_ &gt;= 0 and j_ &lt; 5:
+                find_states_bysq(board, i_, j_, s+board[i][j], poss_, perf_, ansr_ij, ij_path+str(i_)+str(j_)+&quot; &quot;, sqs_used)</code></pre>
+<p>After putting everything together and running several generations of the genetic algorithm, our best string was</p>
+<blockquote>
+<p>W T I M A</p>
+<p>E N S V F</p>
+<p>K O A L I</p>
+<p>R C S R O</p>
+<p>E N A I N</p>
+</blockquote>
+<p>giving us a score of 188,652,076.</p>
+</body>
