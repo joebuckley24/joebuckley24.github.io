@@ -1,3 +1,3 @@
 # Personal Website
 
-Using Github Pages to host my resume and other public documents
+Using Github Pages to host my writing and other work.
