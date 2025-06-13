@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Joe Buckley" />
+  <meta name="dcterms.date" content="2025-06-08" />
+  <title>Pricing a Risky Cash Bond</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Pricing a Risky Cash Bond</h1>
+<p class="author">Joe Buckley</p>
+<p class="date">2025-06-08</p>
+</header>
+<h1 id="pricing-a-risky-cash-bond">Pricing a Risky Cash Bond:</h1>
+<h2 id="starting-with-a-risk-free-bond">Starting with a Risk-free
+Bond</h2>
+<p>We want to find the present value of a risky cash bond by extending
+the process used to price a risk-free cash bond. Generally, a bond’s
+value is thought of as the sum of its discounted future cash flows. A
+dollar tomorrow is worth less than a dollar today, so let’s think of the
+discount function <span class="math inline">\(\delta(t)\)</span> as a
+monotonically decreasing function of time, i.e. <span
+class="math inline">\(\delta(t_1) &gt; \delta(t_2)\)</span> if <span
+class="math inline">\(t_1 &lt; t_2\)</span>. It also has the feature
+<span class="math inline">\(\delta(0)=1\)</span>, meaning there is no
+discount factor at present time <span
+class="math inline">\(t_0=0\)</span>. A bond pays a coupon at regular
+intervals as well as the principal amount at maturity. Even easier for
+this analysis is defining the bond’s cash flows as a schedule of future
+payments <span class="math inline">\(c_i\)</span> at future time <span
+class="math inline">\(t_i\)</span>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Time</th>
+<th>Cashflow</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(t_a\)</span></td>
+<td><span class="math inline">\(c_a\)</span></td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(t_b\)</span></td>
+<td><span class="math inline">\(c_b\)</span></td>
+</tr>
+<tr class="odd">
+<td>…</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(t_m\)</span></td>
+<td><span class="math inline">\(c_m\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>Therefore the present value of a risk free bond defined in this way
+is <span class="math inline">\(\delta(t_a) c_a + \delta(t_b) c_b + \dots
++ \delta(t_m) c_m = \sum_i \delta(t_i) c_i\)</span>.</p>
+<h2 id="extending-our-definitions-to-a-risky-bond">Extending our
+Definitions to a Risky Bond</h2>
+<p>We need to add another factor now to account for the risky nature of
+the bond. The company might default on the future payments of the bond
+and declare bankruptcy, leaving bondholders with whatever recovery value
+<span class="math inline">\(R\)</span> they can salvage from the
+company’s assets. Let’s say the company defaults at time $t^* $ which
+may or may not be after the bond’s maturity <span
+class="math inline">\(t_m\)</span>. Define <span
+class="math inline">\(c(t,t+\Delta t)\)</span> as the scheduled cash
+received by the bondholder in the interval <span
+class="math inline">\((t,t+\Delta t]\)</span>, so that for example <span
+class="math inline">\(c(t,t+\Delta t)=c_b\)</span> if <span
+class="math inline">\(t &lt; t_b\leq t + \Delta t\)</span>, and
+otherwise <span class="math inline">\(c(t, t+\Delta t)=0\)</span> when
+there is no scheduled payment in the interval. Thus, the modified cash
+flows <span class="math inline">\(C\)</span> of the bond are defined by
+<span class="math display">\[\mathrm{C}(t, t+\Delta t) = \begin{cases}
+    c(t,t+\Delta t) &amp; \text{if } t + \Delta t &lt; t^* &amp;\text{
+(No default yet)}\\
+    R &amp; \text{if } t &lt; t^* \leq t + \Delta t &amp;\text{ (Default
+in current interval)}\\
+    0 &amp; \text{if } t^* \leq t &amp;\text{ (Default in a previous
+interval)}.
+\end{cases}\]</span> Then the new equation for the present value of the
+risky bond is the present value of expected cash flows <span
+class="math display">\[\begin{align}\mathbb{E}[C] &amp;= \sum_{i=1}^m
+\delta(t_i)C(t_i,t_i+\Delta t) \\
+&amp;= \sum_{i=1}^m \delta(t_i)\Big[c(t_i,t_i+\Delta t) p(t_i+\Delta t
+&lt; t^* )+R\cdot p(t_i&lt; t^* \leq t_i +\Delta t) +0\cdot p(t^* \leq
+t_i)\Big] \\
+&amp;= \sum_{i=1}^m \delta(t_i)\Big[c(t_i,t_i+\Delta t) p(t_i+\Delta t
+&lt; t^* )+R\cdot p(t_i&lt; t^* \leq t_i +\Delta
+t)\Big].\end{align}\]</span></p>
+<p>For now, we’ll regard <span class="math inline">\(R\)</span> and the
+discount factors <span class="math inline">\(\delta(t)\)</span> as
+given, so we just need to evaluate the probabilities to find the present
+value of the risky bond.</p>
+<h2
+id="characterizing-the-distribution-of-the-occurrence-of-default">Characterizing
+the Distribution of the Occurrence of Default</h2>
+<p>We want to characterize the random process that generates an event of
+default at time <span class="math inline">\(t^*\)</span> for a given
+company that issues bonds. Let’s define the distribution via a survival
+function <span class="math inline">\(S(t)=p(t^* &gt; t)\)</span> such
+that <span class="math inline">\(S(t)=1-F(t),\)</span> the complement of
+the cumulative distribution function. We make one more assumption of
+“memorylessness,” meaning <span
+class="math display">\[\begin{align}p(t^* &gt; t_1+t_2\mid t^* &gt; t_1)
+= p(t^* &gt; t_2).\end{align}\]</span> This says the likelihood of
+default over an interval is not conditioned on how long the company has
+survived before the interval, but only a function of the length of the
+interval. We can relax this assumption later, but it is sensible locally
+and helps give rise to the exponential distribution we use to model
+default rate. From this assertion and the definition of conditional
+probability <span class="math inline">\(P(A\mid B)=P(A\cap
+B)/P(B)\)</span>, we have <span class="math display">\[\begin{align}
+\frac{p(t^* &gt; t_1+t_2\text{ and } t^* &gt; t_1)}{p(t^* &gt; t_1)}
+&amp;= p(t^* &gt; t_2)\\
+p(t^* &gt;t_1+t_2)&amp;=p(t^* &gt;t_1)p(t^* &gt;t_2) \\
+S(t_1+t_2) &amp;= S(t_1)S(t_2). \\
+\end{align}\]</span></p>
+<p>This means our survival function can be written as <span
+class="math display">\[\begin{align}
+S(kt) &amp;= S(t)^k \implies \\
+S(t) = S(1\cdot t) = S(1)^t &amp;= \exp(\ln(S(1)))^t = e^{t\ln S(1)}.
+\end{align}\]</span></p>
+<p>If we let <span class="math inline">\(\lambda=-\ln S(1)\geq
+0\)</span>, then <span class="math inline">\(S(t)=e^{-\lambda
+t}\)</span> and our cdf is <span
+class="math inline">\(F(t)=1-e^{-\lambda t}\)</span>; this is the
+exponential distribution. Furthermore, we refer to <span
+class="math inline">\(\lambda\)</span> as the hazard rate. If we let our
+instantaneous hazard rate <span class="math inline">\(\lambda(t) \geq
+0\)</span> vary as a function of time, our cdf is still decreasing
+monotonically and we retain <span class="math inline">\(F(0)=1\)</span>
+and <span class="math inline">\(F(\infty)=0\)</span>.</p>
+<h2 id="using-cds-prices-to-construct-the-probability-of-default">Using
+CDS prices to construct the probability of default</h2>
+<p>CDS stands for credit default swap, a credit derivative whose cash
+flows depend on whether the issuer defaults on a specified bond, the
+“reference obligation.” It may be thought of as a bet that the company
+defaults on its debt obligations or alternatively as insurance
+(protection against default) for the holder of the underlying bonds. The
+seller of protection must compensate the buyer for the loss of <span
+class="math inline">\(1-R\)</span> in the event of a default occurring
+before the expiry of the swap, and the buyer of protection must pay the
+seller a fixed spread (coupon) in basis points until either a default
+occurs or the contract expires. The contract is fairly priced when both
+counterparties’ present values from the swap are equal, thus the
+expected value of the coupon paid by the buyer (received by the seller)
+until default or maturity must be equal to the buyer’s expected loss
+(seller’s expected gain) of <span class="math inline">\(1-R\)</span> in
+the event of a default. Briefly, the legs of the swap can be written as
+<span class="math display">\[\begin{align}
+\int_0^T s\cdot\delta(t)\cdot p(t&lt; t^* )dt &amp;= \int_0^T
+(1-R)\cdot\delta(t)\cdot p(t=t^* )dt\\
+\implies s\int_0^T\delta(t)S(t)dt &amp;=
+(1-R)\int_0^T\delta(t)\lambda(t)S(t)dt\\
+\implies s\sum_{t=0}^T\delta(t)S(t) &amp;\approx
+(1-R)\sum_{t=0}^T\delta(t)\lambda(t)S(t)\\
+\implies \vphantom{\sum} s &amp;\approx\lambda(1-R).
+\end{align}\]</span> With this approximation, we can use the traded
+spread <span class="math inline">\(s\)</span> of a liquid CDS contracts
+to estimate the cumulative probability of default at contract maturity
+<span class="math inline">\(t\)</span>, assuming a constant default
+intensity <span class="math inline">\(\lambda\)</span>. We conclude this
+is <span class="math inline">\(1-S(t)=F(t)=1-e^{-\lambda
+t}=1-\exp(\frac{t\cdot s}{1-R})\)</span>, and we interpolate values of
+<span class="math inline">\(s(t)\)</span> where there is no liquid
+contract available.</p>
+<h2 id="completing-the-calculation-of-a-risky-bond">Completing the
+Calculation of a Risky Bond</h2>
+<p>All the pieces of the puzzle are here. <span
+class="math display">\[\begin{align}
+\mathbb{E}[C] &amp;=
+\sum_{i=1}^m \delta(t_i)\Big[c(t_i,t_i+\Delta t) p(t_i+\Delta t &lt; t^*
+)+R\cdot p(t_i&lt; t^* \leq t_i +\Delta t)\Big]\\
+&amp;= \sum_{i=1}^m \delta(t_i)\Big[c(t_i,t_i+\Delta t)\cdot
+S(t_i+\Delta t)+R\cdot p(t^* &lt;\Delta t)\Big]\\
+&amp;= \sum_{i=1}^m \delta(t_i)\Big[c(t_i,t_i+\Delta t)
+\exp\Big(\frac{(t_i+\Delta t)\cdot s(t_i+\Delta
+t)}{1-R}\Big)+\frac{R\cdot s(\Delta t)}{1-R}\Big],
+\end{align}\]</span> for sufficiently small <span
+class="math inline">\(\Delta t\)</span>. All that’s left to do is plug
+the numbers into your favorite programming language or even Excel.</p>
+</body>
+</html>
